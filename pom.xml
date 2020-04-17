@@ -17,7 +17,9 @@
 
     <modules>
         <module>licensing-service</module>
+        <module>organization-service</module>
         <module>configuration-service</module>
+        <module>discovery-service</module>
     </modules>
 
     <build>

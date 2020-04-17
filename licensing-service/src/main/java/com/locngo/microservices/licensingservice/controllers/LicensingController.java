@@ -25,6 +25,15 @@ public class LicensingController {
         return this.licenseService.getLicense(organizationId, licenseId);
     }
 
+    @GetMapping(value = "/{licenseId}/{clientType}")
+    public License getLicenseWithClientType(
+            @PathVariable("organizationId") String organizationId,
+            @PathVariable("licenseId") String licenseId,
+            @PathVariable("clientType") String clientType
+    ) {
+        return this.licenseService.getLicense(organizationId, licenseId, clientType);
+    }
+
     @GetMapping
     public List<License> getLicenses(@PathVariable("organizationId") String organizationId) {
         return this.licenseService.getLicenseByOrg(organizationId);

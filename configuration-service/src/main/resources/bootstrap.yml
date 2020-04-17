@@ -1,0 +1,15 @@
+server:
+  port: 8888
+spring:
+  cloud:
+    config:
+      server:
+        encrypt:
+          enabled: false
+        git:
+          uri: https://github.com/xxdanielngoxx/config-repo
+          username: xxdanielngoxx
+          password: Ngodinhloc261571838
+          search-paths: licensingservice, organizationservice
+encrypt:
+  key: test-encrypt-spring-cloud

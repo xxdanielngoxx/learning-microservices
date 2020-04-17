@@ -1,3 +1,11 @@
+# Config encrypt key
+encrypt:
+  key: test-encrypt-spring-cloud
+
+server:
+  port: 8080
+
+# Application config
 spring:
   application:
     name: licensingservice
@@ -6,3 +14,13 @@ spring:
   cloud:
     config:
       uri: http://localhost:8888
+
+# Config eureka discovery
+eureka:
+  instance:
+    prefer-ip-address: true
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      default-zone: http://localhost:8761/eureka/
