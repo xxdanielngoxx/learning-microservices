@@ -2,6 +2,9 @@ package com.locngo.microservices.licensingservice.controllers;
 
 import com.locngo.microservices.licensingservice.model.License;
 import com.locngo.microservices.licensingservice.services.LicenseService;
+import com.locngo.microservices.licensingservice.utils.UserContextHolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -10,6 +13,8 @@ import java.util.List;
 @RestController
 @RequestMapping(value = "/v1/organizations/{organizationId}/licenses")
 public class LicensingController {
+
+    private static final Logger logger = LoggerFactory.getLogger(LicensingController.class);
 
     private final LicenseService licenseService;
 
@@ -36,6 +41,7 @@ public class LicensingController {
 
     @GetMapping
     public List<License> getLicenses(@PathVariable("organizationId") String organizationId) {
+        logger.debug("LicensingServiceImpl.getLicenseByOrg Correlation id: {}", UserContextHolder.getContext().getCorrelationId());
         return this.licenseService.getLicenseByOrg(organizationId);
     }
 

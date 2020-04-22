@@ -7,13 +7,22 @@ import com.locngo.microservices.licensingservice.config.ServiceConfig;
 import com.locngo.microservices.licensingservice.model.License;
 import com.locngo.microservices.licensingservice.model.Organization;
 import com.locngo.microservices.licensingservice.repository.LicenseRepository;
+import com.locngo.microservices.licensingservice.utils.UserContextHolder;
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 
 @Component
 public class LicenseServiceImpl implements LicenseService{
+
+    private static final Logger logger = LoggerFactory.getLogger(LicenseServiceImpl.class);
 
     private final LicenseRepository licenseRepository;
 
@@ -58,8 +67,44 @@ public class LicenseServiceImpl implements LicenseService{
                 .witComment(this.config.getExampleProperty());
     }
 
+    @HystrixCommand(
+            commandProperties = {
+                    @HystrixProperty(
+                            name = "execution.isolation.thread.timeoutInMilliseconds",
+                            value = "1000"
+                    ),
+                    @HystrixProperty(
+                            name = "circuitBreaker.requestVolumeThreshold",
+                            value = "10"
+                    ),
+                    @HystrixProperty(
+                            name = "circuitBreaker.errorThresholdPercentage",
+                            value = "75"
+                    ),
+                    @HystrixProperty(
+                            name = "circuitBreaker.sleepWindowInMilliseconds",
+                            value = "7000"
+                    ),
+                    @HystrixProperty(
+                            name = "metrics.rollingStats.timeInMilliseconds",
+                            value = "15000"
+                    ),
+                    @HystrixProperty(
+                            name = "metrics.rollingPercentile.numBuckets",
+                            value = "5"
+                    )
+            },
+            fallbackMethod = "buildFallbackLicenseList",
+            threadPoolKey = "licenseByOrgThreadPool",
+            threadPoolProperties = {
+                    @HystrixProperty(name = "coreSize", value = "30"),
+                    @HystrixProperty(name = "maxQueueSize", value = "10")
+            }
+    )
     @Override
     public List<License> getLicenseByOrg(String organizationId) {
+        logger.debug("LicensingServiceImpl.getLicenseByOrg Correlation id: {}", UserContextHolder.getContext().getCorrelationId());
+        this.randomlyRunLong();
         return this.licenseRepository.findByOrganizationId(organizationId);
     }
 
@@ -69,6 +114,7 @@ public class LicenseServiceImpl implements LicenseService{
         return this.licenseRepository.save(license);
     }
 
+    @HystrixCommand
     private Organization retrieveOrgInfo(String organizationId, String clientType) {
 
         Organization organization = null;
@@ -90,5 +136,29 @@ public class LicenseServiceImpl implements LicenseService{
                 organization = this.organizationRestTemplateClient.getOrganization(organizationId);
         }
         return organization;
+    }
+
+    private void randomlyRunLong() {
+        Random random = new Random();
+        int randomNum = random.nextInt(4);
+        if (randomNum == 3) sleep();
+    }
+
+    private void sleep() {
+        try {
+            Thread.sleep(1100);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private List<License> buildFallbackLicenseList(String organizationId) {
+        List<License> fallbackList = new ArrayList<>();
+        License license = new License()
+                .withId("0000000-00-00000")
+                .withOrganizationId(organizationId)
+                .withProductName("Sorry no licensing information currently available");
+        fallbackList.add(license);
+        return fallbackList;
     }
 }
